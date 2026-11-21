@@ -37,6 +37,7 @@ func NewDAG(ctx context.Context, logger *slog.Logger, workflow request.CreateWor
 
 	dag.Graph, dag.Roots, dag.NumberOfNodes = constructGraph(workflow.Tasks)
 
+	// TODO: Change this to debug log
 	logger.InfoContext(ctx, "DAG Created", "workflowID", dag.WorkflowID, "graph", dag.Graph)
 
 	return dag
