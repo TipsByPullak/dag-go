@@ -9,3 +9,7 @@ type Task struct {
 	Name         string   `json:"name"`
 	Dependencies []string `json:"dependencies"`
 }
+
+type TriggerWorkers struct {
+	Count int `json:"count"`
+}

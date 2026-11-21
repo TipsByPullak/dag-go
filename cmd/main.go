@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -10,28 +12,65 @@ import (
 	"time"
 
 	"github.com/TipsByPullak/phonepe-coding-round/constants"
+	"github.com/TipsByPullak/phonepe-coding-round/internal/worker"
 	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow/handler"
+	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow/request"
 )
 
 func main() {
 	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
-	if err := boot(ctx, log); err != nil {
+	if err := boot(log); err != nil {
 		log.Error("fatal", "err", err)
 		os.Exit(1)
 	}
 }
 
-func boot(ctx context.Context, logger *slog.Logger) error {
+func boot(logger *slog.Logger) error {
+	// main server context
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	// workers context
+	wCtx, wStop := context.WithCancel(context.Background())
+	defer wStop()
+
 	port := constants.Port
 
 	mux := http.NewServeMux()
 
 	wHandler := handler.NewHandler(logger)
 	wHandler.RegisterRoutes(mux)
+
+	wp := &worker.Pool{}
+	mux.HandleFunc("POST /v1/workers/start", func(w http.ResponseWriter, r *http.Request) {
+		var req request.TriggerWorkers
+
+		decoder := json.NewDecoder(r.Body)
+		decoder.DisallowUnknownFields()
+
+		// Unmarshall request
+		if err := decoder.Decode(&req); err != nil {
+			http.Error(w, "Invalid Input: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		logger.InfoContext(r.Context(), "Trigger Workers received", "request", req)
+
+		if req.Count == 0 {
+			req.Count = constants.NumberOfWorkers // default
+		}
+
+		wp.NumWorkers = req.Count
+
+		if err := wp.Start(wCtx, logger); err != nil {
+			http.Error(w, fmt.Sprintf("failed to start workers: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode("OK")
+	})
 
 	srv := &http.Server{
 		Addr:    ":" + port,
@@ -56,6 +95,11 @@ func boot(ctx context.Context, logger *slog.Logger) error {
 	}
 
 	logger.Info("shut down gracefully")
+
+	wStop()
+	wp.Wait()
+
+	logger.Info("workers shut down gracefully")
 
 	return nil
 }
