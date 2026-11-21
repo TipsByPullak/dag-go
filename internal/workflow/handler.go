@@ -37,7 +37,7 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.InfoContext(r.Context(), "Workflow received", req)
+	h.logger.InfoContext(r.Context(), "Workflow received", "request", req)
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode("OK")
