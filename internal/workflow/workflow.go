@@ -44,26 +44,28 @@ func NewDAG(ctx context.Context, logger *slog.Logger, workflow request.CreateWor
 
 func constructGraph(tasks []request.Task) (map[string][]string, []string, int) {
 	numberOfNodes := len(tasks)
-	roots := make([]string, numberOfNodes)
+	roots := make([]string, 0)
 	graph := make(map[string][]string)
 
 	for _, task := range tasks {
+		// Roots have no dependencies
 		if len(task.Dependencies) == 0 {
 			roots = append(roots, task.Name)
 		}
 
+		// Fill every task name in the adjacency graph list
 		if _, ok := graph[task.Name]; !ok {
-			graph[task.Name] = make([]string, numberOfNodes)
+			graph[task.Name] = make([]string, 0)
 		}
 	}
 
+	// for connecting the graph
 	for _, task := range tasks {
+		if len(task.Dependencies) == 0 {
+			continue
+		}
 		for _, dep := range task.Dependencies {
-			if _, ok := graph[dep]; !ok {
-				graph[dep] = make([]string, numberOfNodes)
-			} else {
-				graph[dep] = append(graph[dep], task.Name)
-			}
+			graph[dep] = append(graph[dep], task.Name)
 		}
 	}
 

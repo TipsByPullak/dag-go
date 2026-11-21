@@ -61,7 +61,7 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 	//TODO: Add validation for DAG
 	// -------------- VALIDATIONS --------------
 
-	h.logger.InfoContext(r.Context(), "Workflow created", "workflowID", dag.WorkflowID)
+	h.logger.InfoContext(r.Context(), "Workflow created", "DAG", dag)
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode("OK")
