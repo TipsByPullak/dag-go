@@ -8,7 +8,7 @@ import (
 	"sync"
 	"uuid"
 
-	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow/request"
+	"github.com/TipsByPullak/phonepe-coding-round/internal/request"
 )
 
 type DAG struct {

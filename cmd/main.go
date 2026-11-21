@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/TipsByPullak/phonepe-coding-round/constants"
+	"github.com/TipsByPullak/phonepe-coding-round/internal/request"
 	"github.com/TipsByPullak/phonepe-coding-round/internal/worker"
 	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow/handler"
-	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow/request"
 )
 
 func main() {
