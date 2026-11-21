@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/TipsByPullak/phonepe-coding-round/constants"
-	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow"
+	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow/handler"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func boot(ctx context.Context, logger *slog.Logger) error {
 
 	mux := http.NewServeMux()
 
-	wHandler := workflow.NewHandler(logger)
+	wHandler := handler.NewHandler(logger)
 	wHandler.RegisterRoutes(mux)
 
 	srv := &http.Server{

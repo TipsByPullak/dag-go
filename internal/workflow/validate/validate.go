@@ -18,26 +18,6 @@ func NewValidator(logger *slog.Logger, store *store.Store) *Validator {
 	return &Validator{logger: logger, store: store}
 }
 
-func (v *Validator) Idempotent(key string, val string) error {
-	key = strings.TrimSpace(key)
-
-	if key == "" {
-		v.logger.Info("Idempotency key is empty")
-		return nil
-	}
-
-	// CheckAndSet function uses a lock
-	if ok := v.store.IdempotencyStore.CheckAndSet(key, val); !ok {
-		v.logger.Warn("Idempotency store hit")
-		return fmt.Errorf(
-			"idempotency key already present with workflow ID: %s",
-			v.store.IdempotencyStore.Get(key),
-		)
-	}
-
-	return nil
-}
-
 func (v *Validator) Acyclic(graph map[string][]string) error {
 	// 0 - not visited, 1 - visiting, 2 - visited
 	visited := make(map[string]int, len(graph))

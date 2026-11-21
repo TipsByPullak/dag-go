@@ -12,22 +12,24 @@ import (
 )
 
 type DAG struct {
+	mu sync.RWMutex
+
 	WorkflowID    string              `json:"workflow_id"`
 	Graph         map[string][]string `json:"graph"`
 	NumberOfNodes int                 `json:"number_of_nodes"`
-	mu            sync.RWMutex
-	State         string
-	Roots         []string
+	State         string              `json:"state"`
+	Roots         []string            `json:"roots"`
 }
 
 const (
-	SCHEDULED = "scheduled"
-	PENDING   = "pending"
-	ACCEPTED  = "accepted"
-	RUNNING   = "running"
-	FAILED    = "failed"
-	ABORTED   = "aborted"
-	SUCCEEDED = "succeeded"
+	SCHEDULED           = "scheduled"
+	PENDING             = "pending"
+	ACCEPTED            = "accepted"
+	RUNNING             = "running"
+	FAILED              = "failed"
+	ABORTED             = "aborted"
+	SUCCEEDED           = "succeeded"
+	PARTIALLY_COMPLETED = "partially completed"
 )
 
 func NewDAG(ctx context.Context, logger *slog.Logger, workflow request.CreateWorkflow) *DAG {
