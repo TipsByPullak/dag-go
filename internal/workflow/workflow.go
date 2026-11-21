@@ -12,13 +12,22 @@ import (
 )
 
 type DAG struct {
-	mu sync.RWMutex
+	Mu sync.RWMutex
 
 	WorkflowID    string              `json:"workflow_id"`
 	Graph         map[string][]string `json:"graph"`
 	NumberOfNodes int                 `json:"number_of_nodes"`
 	State         string              `json:"state"`
 	Roots         []string            `json:"roots"`
+}
+
+type Task struct {
+	Mu sync.RWMutex
+
+	WorkflowID   string   `json:"workflow_id"`
+	Name         string   `json:"id"`
+	Dependencies []string `json:"dependencies"`
+	State        string   `json:"state"`
 }
 
 const (
@@ -82,4 +91,13 @@ func constructGraph(tasks []request.Task) (map[string][]string, []string, int) {
 	}
 
 	return graph, roots, numberOfNodes
+}
+
+func NewTask(_ context.Context, _ *slog.Logger, workflowID string, name string, deps []string) *Task {
+	return &Task{
+		WorkflowID:   workflowID,
+		State:        PENDING,
+		Name:         name,
+		Dependencies: deps,
+	}
 }

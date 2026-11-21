@@ -81,7 +81,7 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.InfoContext(r.Context(), "Workflow created", "DAG", dag)
 
-	err := h.ProcessDAG(r.Context(), dag)
+	err := h.ProcessDAGAndStore(r.Context(), dag)
 	if err != nil {
 		http.Error(w, "Internal Server Error: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -104,7 +104,19 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func (h *Handler) ProcessDAG(ctx context.Context, dag *workflow.DAG) error {
+func (h *Handler) ProcessDAGAndStore(ctx context.Context, dag *workflow.DAG) error {
+	for node, deps := range dag.Graph {
+		task := &workflow.Task{
+			Name:         node,
+			Dependencies: deps,
+		}
+
+		err := h.Storage.TaskStore.Store(task)
+		if err != nil {
+			return err
+		}
+	}
+
 	err := h.Storage.DAGStore.Store(dag)
 	if err != nil {
 		return err
