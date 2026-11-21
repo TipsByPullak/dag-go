@@ -52,10 +52,10 @@ func boot(ctx context.Context, logger *slog.Logger) error {
 	defer shutdownCancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logger.Error("shutting down forcefully", err)
+		logger.Error("shut down forcefully", err)
 	}
 
-	logger.Info("shutting down gracefully")
+	logger.Info("shut down gracefully")
 
 	return nil
 }
