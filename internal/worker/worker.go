@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/TipsByPullak/phonepe-coding-round/constants"
+	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow/handler"
 )
 
 type Pool struct {
@@ -35,14 +36,18 @@ func (wp *Pool) worker(ctx context.Context, logger *slog.Logger, id int) {
 	ticker := time.NewTicker(constants.TickerTime)
 	defer ticker.Stop()
 
+	handler := handler.NewHandler(logger)
+
 	for {
 		if ctx.Err() != nil {
 			logger.InfoContext(ctx, "Worker halted before claiming new work", "id", id)
 			return
 		}
 
-		workflow := new("pick workflow") // TODO: Add logic here
-		if workflow == nil {
+		dag := handler.GetDagForProcessing(ctx)
+		logger.InfoContext(ctx, "dag seen>", "dag", dag)
+
+		if dag == nil {
 			// No work available right now; wait before polling again
 			select {
 			case <-ctx.Done():
@@ -54,7 +59,7 @@ func (wp *Pool) worker(ctx context.Context, logger *slog.Logger, id int) {
 			}
 		}
 		// Do the work (failures here are isolated to this job)
-		logger.InfoContext(ctx, "Worker processing job", "id", id)
+		logger.InfoContext(ctx, "Worker processing job", "id", id, "workflowID", dag.WorkflowID)
 		//if err := doWork(job); err != nil {
 		//	wp.store.UpdateStatus(job.ID, "failed")
 		//} else {

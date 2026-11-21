@@ -58,7 +58,7 @@ func boot(logger *slog.Logger) error {
 		logger.InfoContext(r.Context(), "Trigger Workers received", "request", req)
 
 		if req.Count == 0 {
-			req.Count = constants.NumberOfWorkers // default
+			req.Count = constants.DefaultNumberOfWorkers // default
 		}
 
 		wp.NumWorkers = req.Count

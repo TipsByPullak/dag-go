@@ -125,3 +125,7 @@ func (h *Handler) ProcessDAGAndStore(ctx context.Context, dag *workflow.DAG) err
 	h.logger.InfoContext(ctx, "DAG Stored", "DAG", dag)
 	return nil
 }
+
+func (h *Handler) GetDagForProcessing(_ context.Context) *workflow.DAG {
+	return h.Storage.DAGStore.FindAvailable()
+}

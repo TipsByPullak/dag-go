@@ -10,12 +10,12 @@ import (
 
 type InMemoryStore struct {
 	logger *slog.Logger
-	dags   map[string]*workflow.DAG // stored as workflowID -> JSON
+	Dags   map[string]*workflow.DAG // stored as workflowID -> JSON
 	MuMap  map[string]*sync.RWMutex
 }
 
 func NewInMemoryStore(logger *slog.Logger) *InMemoryStore {
-	return &InMemoryStore{logger: logger, dags: make(map[string]*workflow.DAG), MuMap: make(map[string]*sync.RWMutex)}
+	return &InMemoryStore{logger: logger, Dags: make(map[string]*workflow.DAG), MuMap: make(map[string]*sync.RWMutex)}
 }
 
 func (s *InMemoryStore) Store(dag *workflow.DAG) error {
@@ -30,11 +30,31 @@ func (s *InMemoryStore) Store(dag *workflow.DAG) error {
 		defer mu.Unlock()
 	}
 
-	if _, ok := s.dags[dag.WorkflowID]; ok {
+	if _, ok := s.Dags[dag.WorkflowID]; ok {
 		return fmt.Errorf("dag %s already exists", dag.WorkflowID)
 	}
 
-	s.dags[dag.WorkflowID] = dag
+	s.Dags[dag.WorkflowID] = dag
+
+	return nil
+}
+
+func (s *InMemoryStore) FindAvailable() *workflow.DAG {
+	for _, dag := range s.Dags {
+		s.logger.Info("dag fetched", dag)
+		if dag.State == workflow.PENDING {
+			dag.Mu.Lock()
+
+			// Refresh after mutex acquire
+			if dag.State == workflow.PENDING {
+				dag.State = workflow.RUNNING
+
+				return dag
+			}
+
+			dag.Mu.Unlock()
+		}
+	}
 
 	return nil
 }
