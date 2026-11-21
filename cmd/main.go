@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/TipsByPullak/phonepe-coding-round/constants"
 	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow"
@@ -32,16 +33,29 @@ func boot(ctx context.Context, logger *slog.Logger) error {
 	wHandler := workflow.NewHandler(logger)
 	wHandler.RegisterRoutes(mux)
 
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
-		logger.InfoContext(ctx, "fatal", "err", err)
-		return err
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: mux,
 	}
 
-	select {
-	case <-ctx.Done():
-	}
+	go func() {
+		logger.Info("starting server", "port", port)
+		if err := srv.ListenAndServe(); err != nil {
+			logger.InfoContext(ctx, "fatal", "err", err)
+		}
+	}()
 
+	<-ctx.Done()
 	logger.Info("shutting down", "grace")
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		logger.Error("shutting down", "forcedly", "err", err)
+	}
+
+	logger.Info("shutting down", "gracefully")
 
 	return nil
 }
