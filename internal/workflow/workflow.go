@@ -28,7 +28,7 @@ const (
 	SUCCEEDED = "succeeded"
 )
 
-func NewDAG(_ context.Context, logger *slog.Logger, workflow request.CreateWorkflow) *DAG {
+func NewDAG(ctx context.Context, logger *slog.Logger, workflow request.CreateWorkflow) *DAG {
 	dag := &DAG{
 		WorkflowID:    uuid.New().String(),
 		NumberOfNodes: len(workflow.Tasks),
@@ -37,7 +37,7 @@ func NewDAG(_ context.Context, logger *slog.Logger, workflow request.CreateWorkf
 
 	dag.Graph, dag.Roots, dag.NumberOfNodes = constructGraph(workflow.Tasks)
 
-	logger.Debug("DAG Created", "workflowID", dag.WorkflowID, "graph", dag.Graph)
+	logger.InfoContext(ctx, "DAG Created", "workflowID", dag.WorkflowID, "graph", dag.Graph)
 
 	return dag
 }
