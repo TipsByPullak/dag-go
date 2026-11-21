@@ -34,6 +34,7 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid Input: "+err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	h.logger.InfoContext(r.Context(), "Workflow received", req)
