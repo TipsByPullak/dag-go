@@ -38,6 +38,7 @@ func (v *Validator) Acyclic(graph map[string][]string) error {
 			}
 		}
 
+		visited[node] = 2
 		return false
 	}
 
@@ -45,7 +46,7 @@ func (v *Validator) Acyclic(graph map[string][]string) error {
 		if ok := visited[node]; ok == 0 {
 			if visit(node) {
 				v.logger.Warn("Cycle in DAG detected")
-				return fmt.Errorf("cycle detected in graph")
+				return fmt.Errorf("cycle detected in tasks")
 			}
 		}
 	}

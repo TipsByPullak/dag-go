@@ -90,7 +90,7 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 	resp := response.CreateWorkflow{
 		ID:     dag.WorkflowID,
 		Status: dag.State,
-		Tasks:  make([]response.Task, len(dag.Graph)),
+		Tasks:  make([]response.Task, 0),
 	}
 
 	for node := range dag.Graph {
