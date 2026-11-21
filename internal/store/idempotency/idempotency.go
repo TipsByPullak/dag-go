@@ -12,7 +12,7 @@ type InMemoryStore struct {
 }
 
 func NewInMemoryStore(logger *slog.Logger) *InMemoryStore {
-	return &InMemoryStore{logger: logger}
+	return &InMemoryStore{logger: logger, idempotencyKeys: make(map[string]struct{})}
 }
 
 func (ims *InMemoryStore) Set(key string) {
