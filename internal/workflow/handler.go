@@ -54,13 +54,13 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.InfoContext(r.Context(), "Workflow received", "request", req)
 
-	dag := NewDAG(r.Context(), h.logger, req)
-	// -------------- VALIDATIONS --------------
 	if err := h.Validator.ValidateRequest(&req); err != nil {
 		http.Error(w, "Invalid Input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	
+
+	dag := NewDAG(r.Context(), h.logger, req)
+
 	if err := h.Validator.Acyclic(dag.Graph); err != nil {
 		http.Error(w, "Invalid Input: "+err.Error(), http.StatusBadRequest)
 		return
@@ -70,7 +70,6 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid Input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	// -------------- VALIDATIONS --------------
 
 	h.logger.InfoContext(r.Context(), "Workflow created", "DAG", dag)
 

@@ -3,6 +3,7 @@ package validate
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/TipsByPullak/phonepe-coding-round/internal/store"
 	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow/request"
@@ -18,6 +19,8 @@ func NewValidator(logger *slog.Logger, store *store.Store) *Validator {
 }
 
 func (v *Validator) Idempotent(key string, val string) error {
+	key = strings.TrimSpace(key)
+
 	if key == "" {
 		v.logger.Info("Idempotency key is empty")
 		return nil
@@ -72,28 +75,31 @@ func (v *Validator) Acyclic(graph map[string][]string) error {
 
 func (v *Validator) ValidateRequest(req *request.CreateWorkflow) error {
 
-	var duplicates map[string]int
+	duplicates := make(map[string]int)
 
 	for _, task := range req.Tasks {
-		if task.Name == "" {
+		taskName := strings.TrimSpace(task.Name)
+		if taskName == "" {
 			return fmt.Errorf("task name is empty")
 		}
 
-		if _, ok := duplicates[task.Name]; ok {
+		if _, ok := duplicates[taskName]; ok {
 			return fmt.Errorf("duplicate task name: %s", task.Name)
 		}
-		duplicates[task.Name] = 1
+		duplicates[taskName] = 1
 
-		var dependentDuplicates map[string]int
+		dependentDuplicates := make(map[string]int)
+
 		for _, child := range task.Dependencies {
-			if child == "" {
+			trimmedChild := strings.TrimSpace(child)
+			if trimmedChild == "" {
 				return fmt.Errorf("dependency name is empty in task: %s", task.Name)
 			}
 
-			if _, ok := dependentDuplicates[child]; ok {
+			if _, ok := dependentDuplicates[trimmedChild]; ok {
 				return fmt.Errorf("dependency name %s duplicated in task %s", child, task.Name)
 			}
-			dependentDuplicates[child] = 1
+			dependentDuplicates[trimmedChild] = 1
 		}
 	}
 

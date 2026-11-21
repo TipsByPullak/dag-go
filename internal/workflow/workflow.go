@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"slices"
+	"strings"
 	"sync"
 	"uuid"
 
@@ -50,26 +51,30 @@ func constructGraph(tasks []request.Task) (map[string][]string, []string, int) {
 	graph := make(map[string][]string)
 
 	for _, task := range tasks {
+		taskName := strings.TrimSpace(task.Name)
+
 		// Roots have no dependencies
 		if len(task.Dependencies) == 0 {
-			roots = append(roots, task.Name)
+			roots = append(roots, taskName)
 		}
 
 		// Fill every task name in the adjacency graph list
-		if _, ok := graph[task.Name]; !ok {
-			graph[task.Name] = make([]string, 0)
+		if _, ok := graph[taskName]; !ok {
+			graph[taskName] = make([]string, 0)
 		}
 	}
 
 	// for connecting the graph
 	for _, task := range tasks {
+		taskName := strings.TrimSpace(task.Name)
+
 		if len(task.Dependencies) == 0 {
 			continue
 		}
 		for _, dep := range task.Dependencies {
-
-			if !slices.Contains(graph[dep], task.Name) {
-				graph[dep] = append(graph[dep], task.Name)
+			trimmedDep := strings.TrimSpace(dep)
+			if !slices.Contains(graph[trimmedDep], taskName) {
+				graph[trimmedDep] = append(graph[trimmedDep], taskName)
 			}
 		}
 	}
