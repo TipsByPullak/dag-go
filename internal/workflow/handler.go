@@ -51,12 +51,17 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.InfoContext(r.Context(), "Workflow received", "request", req)
 
+	dag := NewDAG(r.Context(), h.logger, req)
 	// -------------- VALIDATIONS --------------
 	if err := h.Validator.Idempotent(req.IdempotencyKey); err != nil {
 		http.Error(w, "Invalid Input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	//TODO: Add validation for DAG
 	// -------------- VALIDATIONS --------------
+
+	h.logger.Info("Workflow created", "workflowID", dag.WorkflowID)
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode("OK")
