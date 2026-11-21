@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"log/slog"
+	"slices"
 	"sync"
 	"uuid"
 
@@ -66,7 +67,10 @@ func constructGraph(tasks []request.Task) (map[string][]string, []string, int) {
 			continue
 		}
 		for _, dep := range task.Dependencies {
-			graph[dep] = append(graph[dep], task.Name)
+
+			if !slices.Contains(graph[dep], task.Name) {
+				graph[dep] = append(graph[dep], task.Name)
+			}
 		}
 	}
 

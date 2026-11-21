@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/TipsByPullak/phonepe-coding-round/internal/store"
+	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow/request"
 )
 
 type Validator struct {
@@ -63,6 +64,36 @@ func (v *Validator) Acyclic(graph map[string][]string) error {
 				v.logger.Warn("Cycle in DAG detected")
 				return fmt.Errorf("cycle detected in graph")
 			}
+		}
+	}
+
+	return nil
+}
+
+func (v *Validator) ValidateRequest(req *request.CreateWorkflow) error {
+
+	var duplicates map[string]int
+
+	for _, task := range req.Tasks {
+		if task.Name == "" {
+			return fmt.Errorf("task name is empty")
+		}
+
+		if _, ok := duplicates[task.Name]; ok {
+			return fmt.Errorf("duplicate task name: %s", task.Name)
+		}
+		duplicates[task.Name] = 1
+
+		var dependentDuplicates map[string]int
+		for _, child := range task.Dependencies {
+			if child == "" {
+				return fmt.Errorf("dependency name is empty in task: %s", task.Name)
+			}
+
+			if _, ok := dependentDuplicates[child]; ok {
+				return fmt.Errorf("dependency name %s duplicated in task %s", child, task.Name)
+			}
+			dependentDuplicates[child] = 1
 		}
 	}
 
