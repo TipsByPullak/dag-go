@@ -61,7 +61,9 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO: Add validation for DAG
+	if err := h.Validator.Acyclic(dag.Graph); err != nil {
+		http.Error(w, "Invalid Input: "+err.Error(), http.StatusBadRequest)
+	}
 	// -------------- VALIDATIONS --------------
 
 	h.logger.InfoContext(r.Context(), "Workflow created", "DAG", dag)

@@ -33,3 +33,38 @@ func (v *Validator) Idempotent(key string, val string) error {
 
 	return nil
 }
+
+func (v *Validator) Acyclic(graph map[string][]string) error {
+	// 0 - not visited, 1 - visiting, 2 - visited
+	visited := make(map[string]int, len(graph))
+
+	// DFS function
+	var visit func(node string) bool
+	visit = func(node string) bool {
+		visited[node] = 1 // mark visiting
+
+		for _, child := range graph[node] {
+			if visited[child] == 1 {
+				// cycle detected
+				return true
+			} else if visited[child] == 0 {
+				if visit(child) {
+					return true
+				}
+			}
+		}
+
+		return false
+	}
+
+	for node := range graph {
+		if ok := visited[node]; ok == 0 {
+			if visit(node) {
+				v.logger.Warn("Cycle in DAG detected")
+				return fmt.Errorf("cycle detected in graph")
+			}
+		}
+	}
+
+	return nil
+}
