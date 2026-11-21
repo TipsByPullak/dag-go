@@ -3,14 +3,11 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 
-	"github.com/TipsByPullak/phonepe-coding-round/constants"
 	"github.com/TipsByPullak/phonepe-coding-round/internal/store"
 	"github.com/TipsByPullak/phonepe-coding-round/internal/store/idempotency"
-	"github.com/TipsByPullak/phonepe-coding-round/internal/worker"
 	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow"
 	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow/request"
 	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow/response"
@@ -37,7 +34,6 @@ func NewHandler(logger *slog.Logger) *Handler {
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v1/health", h.health)
 	mux.HandleFunc("POST /v1/workflows", h.ExecuteWorkflow)
-	mux.HandleFunc("POST /v1/workers/start", h.TriggerWorkers)
 }
 
 func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
@@ -128,38 +124,4 @@ func (h *Handler) ProcessDAGAndStore(ctx context.Context, dag *workflow.DAG) err
 
 	h.logger.InfoContext(ctx, "DAG Stored", "DAG", dag)
 	return nil
-}
-
-func (h *Handler) TriggerWorkers(w http.ResponseWriter, r *http.Request) {
-	var req request.TriggerWorkers
-
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-
-	// Unmarshall request
-	if err := decoder.Decode(&req); err != nil {
-		http.Error(w, "Invalid Input: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	h.logger.InfoContext(r.Context(), "Trigger Workers received", "request", req)
-
-	if req.Count == 0 {
-		req.Count = constants.NumberOfWorkers // default
-	}
-
-	appCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	wp := &worker.Pool{
-		NumWorkers: req.Count,
-	}
-
-	if err := wp.Start(appCtx, h.logger); err != nil {
-		http.Error(w, fmt.Sprintf("failed to start workers: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode("OK")
 }
