@@ -5,15 +5,27 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/TipsByPullak/phonepe-coding-round/internal/store"
+	"github.com/TipsByPullak/phonepe-coding-round/internal/store/idempotency"
 	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow/request"
+	"github.com/TipsByPullak/phonepe-coding-round/internal/workflow/validate"
 )
 
 type Handler struct {
-	logger *slog.Logger
+	logger           *slog.Logger
+	Storage          *store.Store
+	IdempotencyStore *idempotency.InMemoryStore
+	Validator        *validate.Validator
 }
 
 func NewHandler(logger *slog.Logger) *Handler {
-	return &Handler{logger: logger}
+	newStorage := store.NewStore(logger)
+
+	return &Handler{
+		logger:    logger,
+		Storage:   newStorage,
+		Validator: validate.NewValidator(logger, newStorage),
+	}
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
@@ -38,6 +50,11 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.logger.InfoContext(r.Context(), "Workflow received", "request", req)
+
+	if err := h.Validator.Idempotent(req.IdempotencyKey); err != nil {
+		http.Error(w, "Invalid Input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode("OK")
