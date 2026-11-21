@@ -46,16 +46,16 @@ func boot(ctx context.Context, logger *slog.Logger) error {
 	}()
 
 	<-ctx.Done()
-	logger.Info("shutting down", "grace")
+	logger.Info("starting shut down gracefully")
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logger.Error("shutting down", "forcedly", "err", err)
+		logger.Error("shutting down forcefully", err)
 	}
 
-	logger.Info("shutting down", "gracefully")
+	logger.Info("shutting down gracefully")
 
 	return nil
 }
