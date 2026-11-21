@@ -51,10 +51,12 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.InfoContext(r.Context(), "Workflow received", "request", req)
 
+	// -------------- VALIDATIONS --------------
 	if err := h.Validator.Idempotent(req.IdempotencyKey); err != nil {
 		http.Error(w, "Invalid Input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+	// -------------- VALIDATIONS --------------
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode("OK")

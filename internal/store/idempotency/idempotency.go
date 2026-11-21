@@ -49,5 +49,18 @@ func (ims *InMemoryStore) Len() int {
 func (ims *InMemoryStore) Get(key string) interface{} {
 	ims.Mu.RLock()
 	defer ims.Mu.RUnlock()
+
 	return ims.idempotencyKeys[key]
+}
+
+func (ims *InMemoryStore) CheckAndSet(key string) bool {
+	ims.Mu.Lock()
+	defer ims.Mu.Unlock()
+
+	if _, ok := ims.idempotencyKeys[key]; !ok {
+		ims.idempotencyKeys[key] = struct{}{}
+		return true
+	}
+
+	return false
 }

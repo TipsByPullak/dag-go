@@ -18,13 +18,10 @@ func NewValidator(logger *slog.Logger, store *store.Store) *Validator {
 
 func (v *Validator) Idempotent(key string) error {
 	// Get function uses a Read lock
-	if ok := v.store.IdempotencyStore.Get(key); ok != nil {
+	if ok := v.store.IdempotencyStore.CheckAndSet(key); !ok {
 		v.logger.Warn("Idempotency store hit")
 		return fmt.Errorf("idempotency key already present")
 	}
-
-	// Set function uses a ReadWrite lock
-	v.store.IdempotencyStore.Set(key)
 
 	return nil
 }
