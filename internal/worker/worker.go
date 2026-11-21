@@ -14,6 +14,7 @@ type Pool struct {
 	NumWorkers int
 	startOnce  sync.Once
 	wg         sync.WaitGroup
+	Handler    *handler.Handler
 }
 
 func (wp *Pool) Start(ctx context.Context, logger *slog.Logger) error {
@@ -36,15 +37,13 @@ func (wp *Pool) worker(ctx context.Context, logger *slog.Logger, id int) {
 	ticker := time.NewTicker(constants.TickerTime)
 	defer ticker.Stop()
 
-	handler := handler.NewHandler(logger)
-
 	for {
 		if ctx.Err() != nil {
 			logger.InfoContext(ctx, "Worker halted before claiming new work", "id", id)
 			return
 		}
 
-		dag := handler.GetDagForProcessing(ctx)
+		dag := wp.Handler.GetDagForProcessing(ctx)
 		logger.InfoContext(ctx, "dag seen>", "dag", dag)
 
 		if dag == nil {

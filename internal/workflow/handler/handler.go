@@ -109,6 +109,8 @@ func (h *Handler) ProcessDAGAndStore(ctx context.Context, dag *workflow.DAG) err
 		task := &workflow.Task{
 			Name:         node,
 			Dependencies: deps,
+			WorkflowID:   dag.WorkflowID,
+			State:        workflow.PENDING,
 		}
 
 		err := h.Storage.TaskStore.Store(task)
@@ -121,6 +123,8 @@ func (h *Handler) ProcessDAGAndStore(ctx context.Context, dag *workflow.DAG) err
 	if err != nil {
 		return err
 	}
+
+	h.logger.InfoContext(ctx, "DAGS state", "DAGStore", h.Storage.DAGStore.Dags)
 
 	h.logger.InfoContext(ctx, "DAG Stored", "DAG", dag)
 	return nil

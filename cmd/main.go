@@ -43,6 +43,8 @@ func boot(logger *slog.Logger) error {
 	wHandler.RegisterRoutes(mux)
 
 	wp := &worker.Pool{}
+	wp.Handler = wHandler
+
 	mux.HandleFunc("POST /v1/workers/start", func(w http.ResponseWriter, r *http.Request) {
 		var req request.TriggerWorkers
 
