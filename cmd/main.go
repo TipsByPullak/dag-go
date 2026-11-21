@@ -37,5 +37,11 @@ func boot(ctx context.Context, logger *slog.Logger) error {
 		return err
 	}
 
+	select {
+	case <-ctx.Done():
+	}
+
+	logger.Info("shutting down", "grace")
+
 	return nil
 }

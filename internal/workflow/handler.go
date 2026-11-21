@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"encoding/json"
 	"log/slog"
 	"net/http"
 )
@@ -18,5 +19,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 }
 
 func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
-
+	h.logger.InfoContext(r.Context(), "health route hit")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode("OK")
 }
