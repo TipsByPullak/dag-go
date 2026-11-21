@@ -16,16 +16,19 @@ func NewValidator(logger *slog.Logger, store *store.Store) *Validator {
 	return &Validator{logger: logger, store: store}
 }
 
-func (v *Validator) Idempotent(key string) error {
+func (v *Validator) Idempotent(key string, val string) error {
 	if key == "" {
 		v.logger.Info("Idempotency key is empty")
 		return nil
 	}
 
 	// CheckAndSet function uses a lock
-	if ok := v.store.IdempotencyStore.CheckAndSet(key); !ok {
+	if ok := v.store.IdempotencyStore.CheckAndSet(key, val); !ok {
 		v.logger.Warn("Idempotency store hit")
-		return fmt.Errorf("idempotency key already present")
+		return fmt.Errorf(
+			"idempotency key already present with workflow ID: %s",
+			v.store.IdempotencyStore.Get(key),
+		)
 	}
 
 	return nil

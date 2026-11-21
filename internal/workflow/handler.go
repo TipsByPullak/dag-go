@@ -44,7 +44,10 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	var req request.CreateWorkflow
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&req); err != nil {
 		http.Error(w, "Invalid Input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -53,7 +56,7 @@ func (h *Handler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	dag := NewDAG(r.Context(), h.logger, req)
 	// -------------- VALIDATIONS --------------
-	if err := h.Validator.Idempotent(req.IdempotencyKey); err != nil {
+	if err := h.Validator.Idempotent(req.IdempotencyKey, dag.WorkflowID); err != nil {
 		http.Error(w, "Invalid Input: "+err.Error(), http.StatusBadRequest)
 		return
 	}

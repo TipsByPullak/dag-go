@@ -8,21 +8,28 @@ import (
 type InMemoryStore struct {
 	logger          *slog.Logger
 	Mu              sync.RWMutex
-	idempotencyKeys map[string]struct{}
+	idempotencyKeys map[string]string
 }
 
 func NewInMemoryStore(logger *slog.Logger) *InMemoryStore {
-	return &InMemoryStore{logger: logger, idempotencyKeys: make(map[string]struct{})}
+	return &InMemoryStore{logger: logger, idempotencyKeys: make(map[string]string)}
 }
 
-func (ims *InMemoryStore) CheckAndSet(key string) bool {
+func (ims *InMemoryStore) CheckAndSet(key string, val string) bool {
 	ims.Mu.Lock()
 	defer ims.Mu.Unlock()
 
 	if _, ok := ims.idempotencyKeys[key]; !ok {
-		ims.idempotencyKeys[key] = struct{}{}
+		ims.idempotencyKeys[key] = val
 		return true
 	}
 
 	return false
+}
+
+func (ims *InMemoryStore) Get(key string) string {
+	ims.Mu.RLock()
+	defer ims.Mu.RUnlock()
+
+	return ims.idempotencyKeys[key]
 }
