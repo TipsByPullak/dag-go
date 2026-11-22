@@ -9,28 +9,21 @@ import (
 )
 
 type InMemoryStore struct {
+	mu     sync.RWMutex // lock for db
 	logger *slog.Logger
-	Dags   map[string]*workflow.DAG // stored as workflowID -> JSON
-	MuMap  map[string]*sync.RWMutex
+
+	Dags map[string]*workflow.DAG // stored as workflowID -> JSON
 }
 
 func NewInMemoryStore(logger *slog.Logger) *InMemoryStore {
-	return &InMemoryStore{logger: logger, Dags: make(map[string]*workflow.DAG), MuMap: make(map[string]*sync.RWMutex)}
+	return &InMemoryStore{logger: logger, Dags: make(map[string]*workflow.DAG)}
 }
 
 func (s *InMemoryStore) Store(dag *workflow.DAG) error {
-	if mu, ok := s.MuMap[dag.WorkflowID]; ok {
-		mu.Lock()
-		defer mu.Unlock()
-	} else {
-		mu := &sync.RWMutex{}
-		s.MuMap[dag.WorkflowID] = mu
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-		mu.Lock()
-		defer mu.Unlock()
-	}
-
-	if _, ok := s.Dags[dag.WorkflowID]; ok {
+	if _, exists := s.Dags[dag.WorkflowID]; exists {
 		return fmt.Errorf("dag %s already exists", dag.WorkflowID)
 	}
 
@@ -39,21 +32,27 @@ func (s *InMemoryStore) Store(dag *workflow.DAG) error {
 	return nil
 }
 
+func (s *InMemoryStore) Get(workflowID string) (*workflow.DAG, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	dag, ok := s.Dags[workflowID]
+	return dag, ok
+}
+
 func (s *InMemoryStore) FindAvailable() *workflow.DAG {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	for _, dag := range s.Dags {
-		s.logger.Info("dag fetched", dag)
+		dag.Mu.Lock()
 		if dag.State == workflow.PENDING {
-			dag.Mu.Lock()
-
-			// Refresh after mutex acquire
-			if dag.State == workflow.PENDING {
-				dag.State = workflow.RUNNING
-
-				return dag
-			}
 
 			dag.Mu.Unlock()
+			return dag
 		}
+
+		dag.Mu.Unlock()
 	}
 
 	return nil

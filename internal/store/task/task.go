@@ -11,26 +11,18 @@ import (
 type InMemoryStore struct {
 	logger *slog.Logger
 	tasks  map[string]*workflow.Task // stored as workflowID -> JSON
-	MuMap  map[string]*sync.RWMutex
+	mu     sync.RWMutex
 }
 
 func NewInMemoryStore(logger *slog.Logger) *InMemoryStore {
-	return &InMemoryStore{logger: logger, tasks: make(map[string]*workflow.Task), MuMap: make(map[string]*sync.RWMutex)}
+	return &InMemoryStore{logger: logger, tasks: make(map[string]*workflow.Task)}
 }
 
 func (s *InMemoryStore) Store(task *workflow.Task) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	uid := task.WorkflowID + task.Name
-
-	if mu, ok := s.MuMap[uid]; ok {
-		mu.Lock()
-		defer mu.Unlock()
-	} else {
-		mu := &sync.RWMutex{}
-		s.MuMap[uid] = mu
-
-		mu.Lock()
-		defer mu.Unlock()
-	}
 
 	if _, ok := s.tasks[uid]; ok {
 		return fmt.Errorf("task %s already exists for workflow %s", task.Name, task.WorkflowID)
