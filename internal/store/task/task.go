@@ -22,7 +22,7 @@ func (s *InMemoryStore) Store(task *workflow.Task) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	uid := task.WorkflowID + task.Name
+	uid := task.WorkflowID + "|" + task.Name
 
 	if _, ok := s.tasks[uid]; ok {
 		return fmt.Errorf("task %s already exists for workflow %s", task.Name, task.WorkflowID)
@@ -31,4 +31,12 @@ func (s *InMemoryStore) Store(task *workflow.Task) error {
 	s.tasks[uid] = task
 
 	return nil
+}
+
+func (s *InMemoryStore) Get(workflowID string, taskID string) (*workflow.Task, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	task, ok := s.tasks[workflowID+"|"+taskID]
+	return task, ok
 }
